@@ -12,9 +12,17 @@ import (
 	"strconv"
 )
 
-const dockerApiVersion = "DOCKER_API_VERSION"
+const (
+	dockerApiVersion = "DOCKER_API_VERSION"
+	dockerClientName = "DOCKER"
+)
 
-func CreateCompatibleDockerClient(onVersionSpecified, onVersionDetermined, onUsingDefaultVersion func(string)) (*client.Client, error) {
+type DockerClient struct {
+	Type   string
+	Client *client.Client
+}
+
+func CreateCompatibleDockerClient(onVersionSpecified, onVersionDetermined, onUsingDefaultVersion func(string)) (*DockerClient, error) {
 	dockerApiVersionEnv := os.Getenv(dockerApiVersion)
 	if dockerApiVersionEnv != "" {
 		onVersionSpecified(dockerApiVersionEnv)
@@ -29,19 +37,26 @@ func CreateCompatibleDockerClient(onVersionSpecified, onVersionDetermined, onUsi
 				if err != nil {
 					return nil, err
 				}
-				if isDockerAPIVersionCorrect(docker) {
+				if isAPIVersionCorrect(docker) {
 					onVersionDetermined(apiVersion)
-					return docker, nil
+					return &DockerClient{
+						dockerClientName,
+						docker,
+					}, nil
 				}
 				docker.Close()
 			}
 		}
 		onUsingDefaultVersion(api.DefaultVersion)
 	}
-	return client.NewClientWithOpts(client.FromEnv)
+	cl, err := client.NewClientWithOpts(client.FromEnv)
+	return &DockerClient{
+		dockerClientName,
+		cl,
+	}, err
 }
 
-func isDockerAPIVersionCorrect(docker *client.Client) bool {
+func isAPIVersionCorrect(docker *client.Client) bool {
 	ctx := context.Background()
 	apiInfo, err := docker.ServerVersion(ctx)
 	if err != nil {
