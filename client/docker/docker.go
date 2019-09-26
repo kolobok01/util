@@ -5,6 +5,8 @@ import (
 	"os"
 	"strings"
 
+	blueclient "github.com/kolobok01/util/client"
+
 	"github.com/docker/docker/api"
 	"github.com/docker/docker/client"
 
@@ -22,7 +24,7 @@ type DockerClient struct {
 	Client *client.Client
 }
 
-func CreateCompatibleDockerClient(onVersionSpecified, onVersionDetermined, onUsingDefaultVersion func(string)) (*DockerClient, error) {
+func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefaultVersion func(string)) (*DockerClient, error) {
 	dockerApiVersionEnv := os.Getenv(dockerApiVersion)
 	if dockerApiVersionEnv != "" {
 		onVersionSpecified(dockerApiVersionEnv)
@@ -51,7 +53,7 @@ func CreateCompatibleDockerClient(onVersionSpecified, onVersionDetermined, onUsi
 	}
 	cl, err := client.NewClientWithOpts(client.FromEnv)
 	return &DockerClient{
-		dockerClientName,
+		blueclient.DockerType,
 		cl,
 	}, err
 }
@@ -77,4 +79,8 @@ func parseVersion(ver string) (int, int) {
 		return 0, 0
 	}
 	return major, minor
+}
+
+func (d *DockerClient) GetType() string {
+	return d.Type
 }
