@@ -2,13 +2,14 @@ package docker
 
 import (
 	"fmt"
-	. "github.com/aandryashin/matchers"
-	"github.com/docker/docker/api"
-	"github.com/kolobok01/util"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+
+	. "github.com/aandryashin/matchers"
+	"github.com/docker/docker/api"
+	"github.com/kolobok01/util"
 )
 
 var (
@@ -50,7 +51,7 @@ func mux() http.Handler {
 }
 
 func TestCreateCompatibleDockerClient(t *testing.T) {
-	testCreateCompatibleDockerClient(t, "1.29")
+	testCreateCompatibleDockerClient(t, "1.27")
 }
 
 func TestCreateDockerClientVersionSpecified(t *testing.T) {
@@ -73,7 +74,7 @@ func testCreateCompatibleDockerClient(t *testing.T, determinedVersion string) {
 	fn := func(v string) {
 		version = v
 	}
-	cli, err := CreateCompatibleDockerClient(fn, fn, fn)
+	cli, err := CreateCompatibleClient(fn, fn, fn)
 	AssertThat(t, err, Is{nil})
 	AssertThat(t, cli, Not{nil})
 	AssertThat(t, version, EqualTo{determinedVersion})

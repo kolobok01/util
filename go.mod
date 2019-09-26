@@ -7,7 +7,7 @@ require (
 	github.com/Sirupsen/logrus v1.0.6 // indirect
 	github.com/aandryashin/matchers v0.0.0-20161126170413-435295ea180e
 	github.com/docker/distribution v2.7.1+incompatible // indirect
-	github.com/docker/docker v1.13.1
+	github.com/docker/docker v0.0.0-20170323230751-c6d412e329c8
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
@@ -19,7 +19,6 @@ require (
 	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
 	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
 	k8s.io/api v0.0.0-20190923155552-eac758366a00
-	k8s.io/apimachinery v0.0.0-20190923155427-ec87dd743e08
 	k8s.io/client-go v12.0.0+incompatible
 	k8s.io/utils v0.0.0-20190923111123-69764acb6e8e // indirect
 )

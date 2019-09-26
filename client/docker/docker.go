@@ -35,7 +35,7 @@ func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefa
 			for minorVersion := maxMinorVersion; minorVersion >= minMinorVersion; minorVersion-- {
 				apiVersion := fmt.Sprintf("%d.%d", majorVersion, minorVersion)
 				os.Setenv(dockerApiVersion, apiVersion)
-				docker, err := client.NewClientWithOpts(client.FromEnv)
+				docker, err := client.NewEnvClient()
 				if err != nil {
 					return nil, err
 				}
@@ -51,7 +51,7 @@ func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefa
 		}
 		onUsingDefaultVersion(api.DefaultVersion)
 	}
-	cl, err := client.NewClientWithOpts(client.FromEnv)
+	cl, err := client.NewEnvClient()
 	return &DockerClient{
 		blueclient.DockerType,
 		cl,
