@@ -1,7 +1,7 @@
 package client
 
 type Client interface {
-	Type() string
+	GetType() string
 	CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefaultVersion func(string)) (Client, error)
 }
 
