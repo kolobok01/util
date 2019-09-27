@@ -2,12 +2,14 @@ package docker
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
 	blueclient "github.com/kolobok01/util/client"
 
 	"github.com/docker/docker/api"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 
 	"context"
@@ -83,4 +85,9 @@ func parseVersion(ver string) (int, int) {
 
 func (d *DockerClient) GetType() string {
 	return d.Type
+}
+
+func (d *DockerClient) GetLogs(ctx context.Context, id string) (io.ReadCloser, error) {
+	options := types.ContainerLogsOptions{}
+	return d.Client.ContainerLogs(ctx, id, options)
 }

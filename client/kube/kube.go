@@ -1,6 +1,9 @@
 package kube
 
 import (
+	"context"
+	"io"
+
 	blueclient "github.com/kolobok01/util/client"
 
 	apiv1 "k8s.io/api/core/v1"
@@ -46,4 +49,8 @@ func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefa
 
 func (k *KubeClient) GetType() string {
 	return k.Type
+}
+
+func (k *KubeClient) GetLogs(ctx context.Context, id string) (io.ReadCloser, error) {
+
 }
