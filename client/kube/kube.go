@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"io/ioutil"
+	"sync"
 
 	blueclient "github.com/kolobok01/util/client"
 
@@ -28,6 +30,8 @@ var (
 type KubeClient struct {
 	Type       string
 	PodManager v1.PodInterface
+	debug      bool
+	mu         sync.Mutex
 }
 
 func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefaultVersion func(string)) (*KubeClient, error) {
@@ -55,10 +59,16 @@ func (k *KubeClient) GetType() string {
 func (k *KubeClient) GetLogs(ctx context.Context, id string) (io.ReadCloser, error) {
 	req := k.PodManager.GetLogs(id, nil)
 	res := req.Do()
-	data, err := res.Raw()
+	logs, err := res.Raw()
 	if err != nil {
 		return nil, err
 	}
-	buf := bytes.NewBuffer(data)
-	return buf, nil
+	r := ioutil.NopCloser(bytes.NewReader(logs))
+	return r, err
+}
+
+func (k *KubeClient) SetDebug(debug bool) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	k.debug = debug
 }

@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 
 	blueclient "github.com/kolobok01/util/client"
 
@@ -24,6 +25,8 @@ const (
 type DockerClient struct {
 	Type   string
 	Client *client.Client
+	debug  bool
+	mu     sync.Mutex
 }
 
 func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefaultVersion func(string)) (*DockerClient, error) {
@@ -90,4 +93,10 @@ func (d *DockerClient) GetType() string {
 func (d *DockerClient) GetLogs(ctx context.Context, id string) (io.ReadCloser, error) {
 	options := types.ContainerLogsOptions{}
 	return d.Client.ContainerLogs(ctx, id, options)
+}
+
+func (d *DockerClient) SetDebug(debug bool) {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	d.debug = debug
 }
