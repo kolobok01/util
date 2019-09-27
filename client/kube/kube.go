@@ -1,6 +1,7 @@
 package kube
 
 import (
+	"bytes"
 	"context"
 	"io"
 
@@ -52,5 +53,12 @@ func (k *KubeClient) GetType() string {
 }
 
 func (k *KubeClient) GetLogs(ctx context.Context, id string) (io.ReadCloser, error) {
-
+	req := k.PodManager.GetLogs(id, nil)
+	res := req.Do()
+	data, err := res.Raw()
+	if err != nil {
+		return nil, err
+	}
+	buf := bytes.NewBuffer(data)
+	return buf, nil
 }
