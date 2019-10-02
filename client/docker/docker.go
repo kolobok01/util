@@ -3,6 +3,7 @@ package docker
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -87,10 +88,16 @@ func parseVersion(ver string) (int, int) {
 }
 
 func (d *DockerClient) GetType() string {
+	if d.debug {
+		log.Printf("[%d] [DOCKER_GET_TYPE] [TYPE: %s]", 0, d.Type)
+	}
 	return d.Type
 }
 
 func (d *DockerClient) GetLogs(ctx context.Context, id string) (io.ReadCloser, error) {
+	if d.debug {
+		log.Printf("[%d] [DOCKER_GET_LOGS] [ID: %s]", 0, id)
+	}
 	options := types.ContainerLogsOptions{}
 	return d.Client.ContainerLogs(ctx, id, options)
 }
@@ -99,4 +106,7 @@ func (d *DockerClient) SetDebug(debug bool) {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.debug = debug
+	if d.debug {
+		log.Printf("[%d] [DOCKER_DEBUG] [DEBUG: %s]", 0, d.debug)
+	}
 }

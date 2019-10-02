@@ -5,6 +5,8 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 	"sync"
 
 	blueclient "github.com/kolobok01/util/client"
@@ -24,7 +26,7 @@ const (
 )
 
 var (
-	kubeconfig *string
+	kubeconfig string
 )
 
 type KubeClient struct {
@@ -35,7 +37,8 @@ type KubeClient struct {
 }
 
 func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefaultVersion func(string)) (*KubeClient, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	kubeconfig := filepath.Join(os.Getenv("HOME"), ".kube", "config")
+	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 	if err != nil {
 		return nil, err
 	}
