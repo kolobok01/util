@@ -48,8 +48,8 @@ func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefa
 				if isAPIVersionCorrect(docker) {
 					onVersionDetermined(apiVersion)
 					return &DockerClient{
-						dockerClientName,
-						docker,
+						Type:   blueclient.DockerType,
+						Client: docker,
 					}, nil
 				}
 				docker.Close()
@@ -59,8 +59,8 @@ func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefa
 	}
 	cl, err := client.NewEnvClient()
 	return &DockerClient{
-		blueclient.DockerType,
-		cl,
+		Type:   blueclient.DockerType,
+		Client: cl,
 	}, err
 }
 
