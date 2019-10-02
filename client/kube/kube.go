@@ -48,6 +48,9 @@ func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefa
 		return nil, err
 	}
 
+	v, err := cli.ServerVersion()
+	onVersionDetermined(v.String())
+
 	podManager := cli.CoreV1().Pods(defaultNamespace)
 	return &KubeClient{
 		Type:       blueclient.KubeType,
