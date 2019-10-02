@@ -48,8 +48,13 @@ func CreateCompatibleClient(onVersionSpecified, onVersionDetermined, onUsingDefa
 		return nil, err
 	}
 
-	v, err := cli.ServerVersion()
-	onVersionDetermined(v.String())
+	dcli := cli.DiscoveryClient
+	v, err := dcli.ServerVersion()
+	if err != nil {
+		return nil, err
+	} else {
+		onVersionDetermined(v.String())
+	}
 
 	podManager := cli.CoreV1().Pods(defaultNamespace)
 	return &KubeClient{
