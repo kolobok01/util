@@ -3,6 +3,7 @@ package kube
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -74,23 +75,22 @@ func (k *KubeClient) GetType() string {
 
 func (k *KubeClient) GetLogs(ctx context.Context, id string) (io.ReadCloser, error) {
 	if k.debug {
-		log.Printf("DEBUG: Starting GetLogs for ID: %s", id)
-		log.Printf("DEBUG: context %+v", ctx)
+		log.Printf("DEBUG: Starting GetLogs for ID, context: %s, %+v", id, ctx)
 	}
+
 	req := k.PodManager.GetLogs(id, nil)
 	res := req.Do()
 	logs, err := res.Raw()
 	if err != nil {
 		if k.debug {
-			log.Printf("DEBUG: error in GetLogs for ID: %s", id)
-			log.Printf("DEBUG: error %s", err.Error())
+			log.Printf("DEBUG: error in GetLogs for ID %s: %s", id, err.Error())
 		}
 		return nil, err
 	}
+
 	r := ioutil.NopCloser(bytes.NewReader(logs))
 	if k.debug {
-		log.Printf("DEBUG: success in GetLogs for ID: %s", id)
-		log.Printf("DEBUG: logs: %b", logs)
+		log.Printf("DEBUG: success in GetLogs for ID %s: %b", id, logs)
 	}
 	return r, nil
 }
@@ -101,19 +101,103 @@ func (k *KubeClient) SetDebug(debug bool) {
 	k.debug = debug
 }
 
-func (k *KubeClient) LaunchPod(name string, podSpec *apiv1.PodSpec) error {
+func (k *KubeClient) LaunchPod(name string, podSpec *apiv1.PodSpec) (*apiv1.Pod, error) {
 	if k.debug {
 		log.Printf("DEBUG: LaunchPod: PodSpec: %+v", podSpec)
 	}
 
-	_, err := k.PodManager.Create(&apiv1.Pod{
+	return k.PodManager.Create(&apiv1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
 		Spec: *podSpec,
 	})
-	if k.debug {
-		log.Printf("DEBUG: LaunchPod: err: %+v", err)
+}
+
+func BuildSessionPod(requestId, image string) *apiv1.Pod {
+	return &apiv1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Pod",
+			APIVersion: apiv1.SchemeGroupVersion.String(),
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace:    defaultNamespace,
+			GenerateName: "blueio-",
+		},
+		Spec: apiv1.PodSpec{
+			RestartPolicy: apiv1.RestartPolicyNever,
+			Containers: []apiv1.Container{
+				{
+					Name:  fmt.Sprintf("%s-%s", image, requestId),
+					Image: fmt.Sprintf("expertio/vnc:%s", image),
+				},
+			},
+		},
 	}
+}
+
+func (k *KubeClient) CreateSessionPod(requestId, image string) (*apiv1.Pod, error) {
+	if k.debug {
+		log.Printf("DEBUG: CreateSessionPod: requestId, image: %s, %s", requestId, image)
+	}
+
+	pod := BuildSessionPod(requestId, image)
+	return k.CreatePod(pod)
+}
+
+func (k *KubeClient) CreatePod(pod *apiv1.Pod) (*apiv1.Pod, error) {
+	if k.debug {
+		log.Printf("DEBUG: CreatePod: podspec: %+v", pod)
+	}
+
+	return k.PodManager.Create(pod)
+}
+
+func (k *KubeClient) DeletePodByName(name string) error {
+	if k.debug {
+		log.Printf("DEBUG: DeletePodByName: name: %s", name)
+	}
+
+	return k.PodManager.Delete(name, &metav1.DeleteOptions{
+		// TODO: get proper options
+	})
+}
+
+func (k *KubeClient) GetPodByName(name string) (*apiv1.Pod, error) {
+	if k.debug {
+		log.Printf("DEBUG: GetPodByName: name: %s", name)
+	}
+
+	return k.PodManager.Get(name, metav1.GetOptions{})
+}
+
+func (k *KubeClient) GetPodBySessionID(name string) (*apiv1.Pod, error) {
+	if k.debug {
+		log.Printf("DEBUG: GetPodBySessionID: name: %s", name)
+	}
+
+	return k.PodManager.Get(name, metav1.GetOptions{})
+}
+
+func (k *KubeClient) AddSessionID(name, sessionID string) error {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+
+	pod, err := k.GetPodByName(name)
+	if err != nil {
+		return err
+	}
+	current := pod.Labels[defaultSeleniumSessionIDField]
+	if current != "" {
+		return fmt.Errorf("%s is already set on pod %s", defaultSeleniumSessionIDField, name)
+	}
+
+	if pod.Labels == nil {
+		pod.Labels = make(map[string]string)
+	}
+	pod.Labels[defaultSeleniumSessionIDField] = sessionID
+
+	_, err = k.PodManager.Update(pod)
 	return err
+
 }

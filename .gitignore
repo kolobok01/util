@@ -1,3 +1,5 @@
 .idea
 *.iml
 coverage.txt
+.vscode
+.DS_STORE
