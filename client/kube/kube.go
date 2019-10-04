@@ -9,6 +9,8 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 
 	blueclient "github.com/kolobok01/util/client"
@@ -114,7 +116,12 @@ func (k *KubeClient) LaunchPod(name string, podSpec *apiv1.PodSpec) (*apiv1.Pod,
 	})
 }
 
-func BuildSessionPod(requestId, image string) *apiv1.Pod {
+func BuildSessionPod(requestId, image string) (*apiv1.Pod, error) {
+	browser, version, err := getBrowserAndVersion(image)
+	if err != nil {
+		return nil, err
+	}
+	minor := (*version - float64(int(*version))) * 10
 	return &apiv1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -128,12 +135,12 @@ func BuildSessionPod(requestId, image string) *apiv1.Pod {
 			RestartPolicy: apiv1.RestartPolicyNever,
 			Containers: []apiv1.Container{
 				{
-					Name:  fmt.Sprintf("%s-%s", image, requestId),
+					Name:  fmt.Sprintf("req_%s_brow_%s_ver_%.0f_%.0f", requestId, browser, version, minor),
 					Image: fmt.Sprintf("expertio/vnc:%s", image),
 				},
 			},
 		},
-	}
+	}, nil
 }
 
 func (k *KubeClient) CreateSessionPod(requestId, image string) (*apiv1.Pod, error) {
@@ -200,4 +207,23 @@ func (k *KubeClient) AddSessionID(name, sessionID string) error {
 	_, err = k.PodManager.Update(pod)
 	return err
 
+}
+
+func getBrowserAndVersion(image string) (*string, *float64, error) {
+	parts := strings.Split(image, ":")
+	if len(parts) != 2 {
+		return nil, nil, fmt.Errorf("incorrect input, should be in <image>:<version> format, got: %s", image)
+	}
+	browserAndVersion := parts[1]
+	browserAndVersionSlice := strings.Split(browserAndVersion, "_")
+	if len(parts) != 2 {
+		return nil, nil, fmt.Errorf("incorrect input, should be in <browser>_<version_number> format, got: %s", browserAndVersion)
+	}
+	browser := browserAndVersionSlice[0]
+	versionString := browserAndVersionSlice[1]
+	version, err := strconv.ParseFloat(versionString, 32)
+	if err == nil {
+		return &browser, &version, nil
+	}
+	return nil, nil, fmt.Errorf("got err on browserVersion parse: %s", err.Error())
 }
