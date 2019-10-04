@@ -135,7 +135,7 @@ func BuildSessionPod(requestId, image string) (*apiv1.Pod, error) {
 			RestartPolicy: apiv1.RestartPolicyNever,
 			Containers: []apiv1.Container{
 				{
-					Name:  fmt.Sprintf("req_%s_brow_%s_ver_%.0f_%.0f", requestId, *browser, *version, minor),
+					Name:  fmt.Sprintf("req-%s-brow-%s-ver-%.0f-%.0f", requestId, *browser, *version, minor),
 					Image: fmt.Sprintf("expertio/vnc:%s", image),
 				},
 			},
