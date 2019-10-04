@@ -148,7 +148,13 @@ func (k *KubeClient) CreateSessionPod(requestId, image string) (*apiv1.Pod, erro
 		log.Printf("DEBUG: CreateSessionPod: requestId, image: %s, %s", requestId, image)
 	}
 
-	pod := BuildSessionPod(requestId, image)
+	pod, err := BuildSessionPod(requestId, image)
+	if err != nil {
+		if k.debug {
+			log.Printf("DEBUG: CreateSessionPod: got err %s", err)
+		}
+		return nil, err
+	}
 	return k.CreatePod(pod)
 }
 
