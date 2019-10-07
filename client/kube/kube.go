@@ -13,6 +13,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/daemon/network"
 	blueclient "github.com/kolobok01/util/client"
 
 	apiv1 "k8s.io/api/core/v1"
@@ -116,12 +118,18 @@ func (k *KubeClient) LaunchPod(name string, podSpec *apiv1.PodSpec) (*apiv1.Pod,
 	})
 }
 
-func BuildSessionPod(requestId, image string) (*apiv1.Pod, error) {
+func BuildSessionPod(requestId, image string, video bool) (*apiv1.Pod, error) {
 	browser, version, err := getBrowserAndVersion(image)
 	if err != nil {
 		return nil, err
 	}
 	minor := (*version - float64(int(*version))) * 10
+	containers := []apiv1.Container{
+		{
+			Name:  fmt.Sprintf("req-%s-brow-%s-ver-%.0f-%.0f", requestId, *browser, *version, minor),
+			Image: fmt.Sprintf("%s", image),
+		},
+	}
 	return &apiv1.Pod{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Pod",
@@ -133,12 +141,7 @@ func BuildSessionPod(requestId, image string) (*apiv1.Pod, error) {
 		},
 		Spec: apiv1.PodSpec{
 			RestartPolicy: apiv1.RestartPolicyNever,
-			Containers: []apiv1.Container{
-				{
-					Name:  fmt.Sprintf("req-%s-brow-%s-ver-%.0f-%.0f", requestId, *browser, *version, minor),
-					Image: fmt.Sprintf("%s", image),
-				},
-			},
+			Containers:    containers,
 		},
 	}, nil
 }
@@ -232,4 +235,15 @@ func getBrowserAndVersion(image string) (*string, *float64, error) {
 		return &browser, &version, nil
 	}
 	return nil, nil, fmt.Errorf("got err on browserVersion parse: %s", err.Error())
+}
+
+// NetworkConnect connects a container to an existent network in the docker host.
+func (k *KubeClient) NetworkConnect(ctx context.Context, networkID, containerID string, config *network.EndpointSettings) error {
+	nc := types.NetworkConnect{
+		Container:      containerID,
+		EndpointConfig: config,
+	}
+	resp, err := cli.post(ctx, "/networks/"+networkID+"/connect", nil, nc, nil)
+	ensureReaderClosed(resp)
+	return err
 }

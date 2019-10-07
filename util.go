@@ -125,7 +125,9 @@ func JsonError(w http.ResponseWriter, msg string, code int) {
 		})
 }
 
-func RespondWithJSON(w http.ResponseWriter, data interface{}, err error) {
+func RespondWithJSON(w http.ResponseWriter, r *http.Request, data interface{}, err error) {
+	defer r.Body.Close()
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
